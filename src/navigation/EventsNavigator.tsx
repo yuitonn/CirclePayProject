@@ -1,21 +1,43 @@
 // src/navigation/EventsNavigator.tsx
 import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
-import { Text, View } from 'react-native';
+import EventsScreen from '../screens/events/EventsScreen';
+import EventDetailsScreen from '../screens/events/EventDetailsScreen';
+import CreateEventScreen from '../screens/events/CreateEventScreen';
+import EditEventScreen from '../screens/events/EditEventScreen';
 
-const Stack = createStackNavigator();
+type EventsStackParamList = {
+    Events: undefined;
+    EventDetails: { eventId: string };
+    CreateEvent: undefined;
+    EditEvent: { eventId: string; event: any };
+};
 
-// 仮のコンポーネント（後で実装される本物のスクリーンに置き換えます）
-const EventsPlaceholder = () => (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <Text>イベント画面 - 開発中</Text>
-    </View>
-);
+const Stack = createStackNavigator<EventsStackParamList>();
 
 const EventsNavigator = () => {
     return (
         <Stack.Navigator>
-        <Stack.Screen name="Events" component={EventsPlaceholder} options={{ title: 'イベント' }} />
+        <Stack.Screen 
+            name="Events" 
+            component={EventsScreen} 
+            options={{ title: 'イベント' }} 
+        />
+        <Stack.Screen 
+            name="EventDetails" 
+            component={EventDetailsScreen} 
+            options={{ title: 'イベント詳細' }} 
+        />
+        <Stack.Screen 
+            name="CreateEvent" 
+            component={CreateEventScreen} 
+            options={{ title: '新しいイベント' }} 
+        />
+        <Stack.Screen 
+            name="EditEvent" 
+            component={EditEventScreen} 
+            options={{ title: 'イベントを編集' }} 
+        />
         </Stack.Navigator>
     );
 };
