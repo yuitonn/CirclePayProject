@@ -1,8 +1,8 @@
-// src/navigation/AppNavigator.tsx
+// src/navigation/MainNavigator.tsx
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import HomeNavigator from './HomeNavigator';
+import HomeScreen from '../screens/home/HomeScreen';
 import EventsNavigator from './EventsNavigator';
 import PaymentsNavigator from './PaymentsNavigator';
 import GroupsNavigator from './GroupsNavigator';
@@ -10,7 +10,7 @@ import { theme } from '../styles/theme';
 
 const Tab = createBottomTabNavigator();
 
-const AppNavigator = () => {
+const MainNavigator = () => {
     return (
         <Tab.Navigator
         screenOptions={{
@@ -21,7 +21,7 @@ const AppNavigator = () => {
         >
         <Tab.Screen
             name="HomeTab"
-            component={HomeNavigator}
+            component={HomeScreen}
             options={{
             tabBarLabel: 'ホーム',
             tabBarIcon: ({ color, size }) => (
@@ -63,5 +63,4 @@ const AppNavigator = () => {
     );
 };
 
-export default AppNavigator;
-
+export default MainNavigator;
