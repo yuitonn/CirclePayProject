@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "106826133499",
+    "project_id": "circle-pay-a4ee5",
+    "storage_bucket": "circle-pay-a4ee5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:106826133499:android:2ea4fcf121f3ed22e6e55e",
+        "android_client_info": {
+          "package_name": "com.yuitoon.circlepay"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD2pDGsMhAU4DXeCkUjfwIOlhJs17vUU7Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
