@@ -1,6 +1,5 @@
-// src/hooks/useAuth.tsx
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { auth } from '../config/firebase';
+import { auth, db } from '../config/firebase';
 import { 
     User, 
     onAuthStateChanged, 
@@ -8,9 +7,11 @@ import {
     createUserWithEmailAndPassword,
     signOut as firebaseSignOut
 } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 
 interface AuthContextType {
     user: User | null;
+    userData: any | null;
     loading: boolean;
     signIn: (email: string, password: string) => Promise<User>;
     signUp: (email: string, password: string) => Promise<User>;
@@ -21,11 +22,27 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
+    const [userData, setUserData] = useState<any | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
         setUser(currentUser);
+        
+        // ユーザーが存在する場合は、Firestoreからユーザーデータを取得
+        if (currentUser) {
+            try {
+            const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+            if (userDoc.exists()) {
+                setUserData(userDoc.data());
+            }
+            } catch (error) {
+            console.error('Error fetching user data:', error);
+            }
+        } else {
+            setUserData(null);
+        }
+        
         setLoading(false);
         });
 
@@ -46,6 +63,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const value = {
         user,
+        userData,
         loading,
         signIn,
         signUp,
