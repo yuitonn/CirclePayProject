@@ -22,6 +22,7 @@
     "firebase": "^11.4.0",
     "react": "18.3.1",
     "react-native": "0.76.7",
+    "react-native-autogrow-textinput": "^5.4.0",
     "react-native-gesture-handler": "^2.24.0",
     "react-native-paper": "^5.13.1",
     "react-native-paper-dropdown": "^2.3.1",

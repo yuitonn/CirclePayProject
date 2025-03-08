@@ -44,7 +44,7 @@ const CreateGroupScreen = () => {
             description: description.trim(),
             type,
             adminUsers: [],
-            createdBy: user.uid // この行を追加
+            createdBy: user.uid 
         };
 
         const groupId = await groupService.createGroup(groupData);
@@ -82,7 +82,7 @@ const CreateGroupScreen = () => {
             placeholder="グループの説明を入力してください"
             multiline
             numberOfLines={4}
-            style={styles.input}
+            style={[styles.input, { paddingBottom: 70, paddingTop: 10 }]}
             />
 
             <Text style={styles.label}>グループタイプ</Text>

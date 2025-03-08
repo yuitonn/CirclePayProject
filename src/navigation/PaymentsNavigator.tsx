@@ -1,21 +1,36 @@
 // src/navigation/PaymentsNavigator.tsx
 import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
-import { Text, View } from 'react-native';
+import PaymentsScreen from '../screens/payments/PaymentsScreen';
+import PaymentDetailsScreen from '../screens/payments/PaymentDetailsScreen';
+import CreatePaymentScreen from '../screens/payments/CreatePaymentScreen';
 
-const Stack = createStackNavigator();
+type PaymentsStackParamList = {
+    Payments: undefined;
+    PaymentDetails: { paymentId: string };
+    CreatePayment: undefined;
+};
 
-// 仮のコンポーネント（後で実装される本物のスクリーンに置き換えます）
-const PaymentsPlaceholder = () => (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <Text>支払い画面 - 開発中</Text>
-    </View>
-);
+const Stack = createStackNavigator<PaymentsStackParamList>();
 
 const PaymentsNavigator = () => {
     return (
         <Stack.Navigator>
-        <Stack.Screen name="Payments" component={PaymentsPlaceholder} options={{ title: '支払い' }} />
+        <Stack.Screen 
+            name="Payments" 
+            component={PaymentsScreen} 
+            options={{ title: '支払い' }} 
+        />
+        <Stack.Screen 
+            name="PaymentDetails" 
+            component={PaymentDetailsScreen} 
+            options={{ title: '支払い詳細' }} 
+        />
+        <Stack.Screen 
+            name="CreatePayment" 
+            component={CreatePaymentScreen} 
+            options={{ title: '新しい支払い' }} 
+        />
         </Stack.Navigator>
     );
 };
