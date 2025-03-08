@@ -467,7 +467,7 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     statusChip: {
-        height: 24,
+        height: 30,
     },
     noParticipantsText: {
         textAlign: 'center',

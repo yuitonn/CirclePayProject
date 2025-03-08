@@ -98,7 +98,7 @@ const EditGroupScreen = () => {
             placeholder="グループの説明を入力してください"
             multiline
             numberOfLines={4}
-            style={styles.input}
+            style={[styles.input, { paddingBottom: 70, paddingTop: 10 }]}
             />
 
             <Text style={styles.label}>グループタイプ</Text>

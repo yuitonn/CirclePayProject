@@ -11,6 +11,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { paymentService } from '../../services/firebase/paymentService';
 import { groupService } from '../../services/firebase/groupService';
 import { eventService } from '../../services/firebase/eventService';
+import RNPickerSelect from 'react-native-picker-select';
 import { theme } from '../../styles/theme';
 
 type PaymentsStackParamList = {
@@ -38,7 +39,7 @@ const CreatePaymentScreen = () => {
     // Bank info
     const [bankName, setBankName] = useState('');
     const [branchName, setBranchName] = useState('');
-    const [accountType, setAccountType] = useState('普通');
+    const [accountType, setAccountType] = useState('');
     const [accountNumber, setAccountNumber] = useState('');
     const [accountHolder, setAccountHolder] = useState('');
     
@@ -433,20 +434,15 @@ const CreatePaymentScreen = () => {
                 placeholder="例: 〇〇支店"
                 />
                 
-                <View style={styles.accountTypeContainer}>
-                <Text style={styles.label}>口座種別</Text>
-                <View style={styles.pickerWrapper}>
-                    <Picker
-                    selectedValue={accountType}
-                    onValueChange={(itemValue) => setAccountType(itemValue)}
-                    style={styles.picker}
-                    >
-                    <Picker.Item label="普通" value="普通" />
-                    <Picker.Item label="当座" value="当座" />
-                    <Picker.Item label="貯蓄" value="貯蓄" />
-                    </Picker>
-                </View>
-                </View>
+                <TextInput
+                label="口座種別"
+                value={accountType}
+                onChangeText={setAccountType}
+                mode="outlined"
+                style={styles.nestedInput}
+                placeholder="例: 普通預金"
+                keyboardType="number-pad"
+                />
                 
                 <TextInput
                 label="口座番号"
@@ -559,6 +555,19 @@ const styles = StyleSheet.create({
         marginBottom: 32,
         paddingVertical: 8,
         backgroundColor: theme.colors.primary,
+    },
+});
+
+const pickerSelectStyles = StyleSheet.create({
+        inputIOS: {
+        fontSize: 16,
+        paddingVertical: 12,
+        color: 'black',
+    },
+        inputAndroid: {
+        fontSize: 16,
+        paddingVertical: 12,
+        color: 'black',
     },
 });
 

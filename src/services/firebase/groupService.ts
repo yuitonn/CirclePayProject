@@ -3,7 +3,7 @@ import { db, auth } from '../../config/firebase';
 import { 
     collection, doc, getDoc, setDoc, updateDoc, deleteDoc,
     query, where, getDocs, serverTimestamp, arrayUnion, arrayRemove,
-    writeBatch
+    writeBatch, increment as firestoreIncrement
 } from 'firebase/firestore';
 
 export interface Group {
@@ -130,19 +130,75 @@ export const groupService = {
         }
     },
 
-    // グループメンバーの取得
-    async getGroupMembers(groupId: string): Promise<(GroupMember & { id: string })[]> {
+    // グループの削除
+    async deleteGroup(groupId: string): Promise<void> {
         try {
-        const membersCollection = collection(db, 'groups', groupId, 'members');
-        const membersSnapshot = await getDocs(membersCollection);
+        if (!auth.currentUser) throw new Error('User not authenticated');
         
-        return membersSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        })) as (GroupMember & { id: string })[];
+        // トランザクションを使用して、グループの削除と関連データの削除を同時に行う
+        const batch = writeBatch(db);
+        
+        // グループのメンバーを取得
+        const membersSnapshot = await getDocs(collection(db, 'groups', groupId, 'members'));
+        
+        // 各メンバーのユーザードキュメントからgroupsフィールドを更新
+        membersSnapshot.docs.forEach(memberDoc => {
+            const userId = memberDoc.id;
+            const userRef = doc(db, 'users', userId);
+            batch.update(userRef, {
+                groups: arrayRemove(groupId)
+            });
+            
+            // メンバードキュメントも削除
+            const memberRef = doc(db, 'groups', groupId, 'members', userId);
+            batch.delete(memberRef);
+        });
+        
+        // グループドキュメントを削除
+        const groupRef = doc(db, 'groups', groupId);
+        batch.delete(groupRef);
+        
+        await batch.commit();
         } catch (error) {
-        console.error('Error getting group members:', error);
+        console.error('Error deleting group:', error);
         throw error;
+        }
+    },
+
+    // グループメンバーの取得（ユーザー名情報を含む）
+    async getGroupMembers(groupId: string): Promise<(GroupMember & { id: string, displayName: string })[]> {
+        try {
+            const membersCollection = collection(db, 'groups', groupId, 'members');
+            const membersSnapshot = await getDocs(membersCollection);
+            
+            // メンバー情報を取得
+            const membersData = membersSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            })) as (GroupMember & { id: string })[];
+            
+            // ユーザー情報を追加取得
+            const membersWithNames = await Promise.all(membersData.map(async (member) => {
+                // ユーザードキュメントを取得
+                const userDoc = await getDoc(doc(db, 'users', member.userId));
+                
+                // ユーザー情報があれば表示名を設定、なければ既存の displayName か ID を使用
+                let displayName = member.displayName || member.userId;
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    displayName = userData.name || userData.displayName || displayName;
+                }
+                
+                return {
+                    ...member,
+                    displayName
+                };
+            }));
+            
+            return membersWithNames;
+        } catch (error) {
+            console.error('Error getting group members:', error);
+            throw error;
         }
     },
 
@@ -165,7 +221,7 @@ export const groupService = {
         // グループのメンバー数を更新
         const groupRef = doc(db, 'groups', groupId);
         batch.update(groupRef, {
-            memberCount: increment(1),
+            memberCount: firestoreIncrement(1),
             updatedAt: timestamp
         });
         
@@ -193,7 +249,7 @@ export const groupService = {
         }
     },
 
-    // メンバーの削除（グループ脱退）
+    // メンバーの削除
     async removeMember(groupId: string, userId: string): Promise<void> {
         try {
         const batch = writeBatch(db);
@@ -205,7 +261,7 @@ export const groupService = {
         // グループのメンバー数を更新
         const groupRef = doc(db, 'groups', groupId);
         batch.update(groupRef, {
-            memberCount: increment(-1),
+            memberCount: firestoreIncrement(-1),
             updatedAt: serverTimestamp(),
             adminUsers: arrayRemove(userId),
             treasurerUsers: arrayRemove(userId)
@@ -224,12 +280,3 @@ export const groupService = {
         }
     }
 };
-
-// ヘルパー関数
-function increment(amount: number) {
-    return {
-        // Firestoreのインクリメント関数をインポートして使用
-        __type__: 'increment',
-        amount
-    };
-}

@@ -2,8 +2,14 @@
 import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import HomeScreen from '../screens/home/HomeScreen';
+import NotificationsScreen from '../screens/notifications/NotificationsScreen';
 
-const Stack = createStackNavigator();
+type HomeStackParamList = {
+    Home: undefined;
+    Notifications: undefined;
+};
+
+const Stack = createStackNavigator<HomeStackParamList>();
 
 const HomeNavigator = () => {
     return (
@@ -12,6 +18,11 @@ const HomeNavigator = () => {
             name="Home" 
             component={HomeScreen} 
             options={{ title: 'ホーム' }} 
+        />
+        <Stack.Screen 
+            name="Notifications" 
+            component={NotificationsScreen} 
+            options={{ title: '通知' }} 
         />
         </Stack.Navigator>
     );

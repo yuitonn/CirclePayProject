@@ -1,13 +1,14 @@
 // src/screens/groups/GroupsScreen.tsx
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { groupService, Group } from '../../services/firebase/groupService';
 import { useAuth } from '../../hooks/useAuth';
 import { Avatar, Button, Card, FAB } from 'react-native-paper';
 import { theme } from '../../styles/theme';
 import { GroupStackParamList } from '../../types/navigation';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useCallback } from 'react';
 
 type GroupsScreenNavigationProp = StackNavigationProp<GroupStackParamList, 'Groups'>;
 
@@ -17,22 +18,25 @@ const GroupsScreen = () => {
     const { user } = useAuth();
     const navigation = useNavigation<GroupsScreenNavigationProp>();
 
-    useEffect(() => {
-        const fetchGroups = async () => {
-        if (user) {
-            try {
-            const userGroups = await groupService.getUserGroups(user.uid);
-            setGroups(userGroups);
-            } catch (error) {
-            console.error('Error fetching groups:', error);
-            } finally {
-            setLoading(false);
+    useFocusEffect(
+        useCallback(() => {
+            const fetchGroups = async () => {
+            if (user) {
+                setLoading(true);
+                try {
+                const userGroups = await groupService.getUserGroups(user.uid);
+                setGroups(userGroups);
+                } catch (error) {
+                console.error('Error fetching groups:', error);
+                } finally {
+                setLoading(false);
+                }
             }
-        }
-        };
-
-        fetchGroups();
-    }, [user]);
+            };
+        
+            fetchGroups();
+        }, [user])
+    );
 
     const handleCreateGroup = () => {
         navigation.navigate('CreateGroup');

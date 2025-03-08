@@ -418,7 +418,11 @@ const PaymentDetailsScreen = () => {
             <Card.Content>
                 <Text style={styles.paymentMethodsTitle}>支払い方法</Text>
                 
-                {payment.paymentMethods.map(method => renderPaymentMethod(method))}
+                {payment.paymentMethods.map(method => (
+                    <React.Fragment key={method}>
+                        {renderPaymentMethod(method)}
+                    </React.Fragment>
+                ))}
             </Card.Content>
             </Card>
             

@@ -2,7 +2,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import HomeScreen from '../screens/home/HomeScreen';
+import HomeNavigator from './HomeNavigator'; // HomeScreenからHomeNavigatorに変更
 import EventsNavigator from './EventsNavigator';
 import PaymentsNavigator from './PaymentsNavigator';
 import GroupsNavigator from './GroupsNavigator';
@@ -21,7 +21,7 @@ const MainNavigator = () => {
         >
         <Tab.Screen
             name="HomeTab"
-            component={HomeScreen}
+            component={HomeNavigator} // 直接HomeScreenの代わりにHomeNavigatorを使用
             options={{
             tabBarLabel: 'ホーム',
             tabBarIcon: ({ color, size }) => (

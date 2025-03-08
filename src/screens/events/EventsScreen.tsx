@@ -1,7 +1,7 @@
 // src/screens/events/EventsScreen.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { Card, FAB, Chip, Searchbar } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -24,43 +24,69 @@ const EventsScreen = () => {
     const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
-    const [filter, setFilter] = useState<'all' | 'upcoming' | 'past'>('upcoming');
+    const [filter, setFilter] = useState<'all' | 'upcoming' | 'past'>('all'); // 初期値を'all'に変更
     
     const { userData } = useAuth();
     const navigation = useNavigation<EventsScreenNavigationProp>();
 
-    useEffect(() => {
-        const fetchEvents = async () => {
+    // イベント取得関数
+    const fetchEvents = useCallback(async () => {
         if (userData) {
             setLoading(true);
             try {
-            const groupIds = userData.groups || [];
-            let allEvents: Event[] = [];
-            
-            // 各グループのイベントを取得
-            for (const groupId of groupIds) {
-                const groupEvents = await eventService.getGroupEvents(groupId);
-                allEvents = [...allEvents, ...groupEvents];
-            }
-            
-            // 重複を排除
-            const uniqueEvents = Array.from(new Map(allEvents.map(event => [event.id, event])).values());
-            
-            // 日付順にソート
-            uniqueEvents.sort((a, b) => a.startDate.seconds - b.startDate.seconds);
-            
-            setEvents(uniqueEvents);
-            filterEvents(uniqueEvents, filter, searchQuery);
+                const groupIds = userData.groups || [];
+                console.log('ユーザーのグループIDs:', groupIds);
+                
+                if (groupIds.length === 0) {
+                    console.log('ユーザーがグループに所属していません');
+                    setEvents([]);
+                    setFilteredEvents([]);
+                    return;
+                }
+                
+                let allEvents: Event[] = [];
+                
+                // 各グループのイベントを取得
+                for (const groupId of groupIds) {
+                    console.log('グループID:', groupId, 'のイベントを取得中');
+                    const groupEvents = await eventService.getGroupEvents(groupId);
+                    console.log('取得したイベント数:', groupEvents.length);
+                    allEvents = [...allEvents, ...groupEvents];
+                }
+                
+                console.log('全イベント数:', allEvents.length);
+                
+                // 重複を排除
+                const uniqueEvents = Array.from(new Map(allEvents.map(event => [event.id, event])).values());
+                
+                // 日付順にソート
+                uniqueEvents.sort((a, b) => a.startDate.seconds - b.startDate.seconds);
+                
+                setEvents(uniqueEvents);
+                filterEvents(uniqueEvents, filter, searchQuery);
             } catch (error) {
-            console.error('Error fetching events:', error);
+                console.error('イベント取得エラー:', error);
             } finally {
-            setLoading(false);
+                setLoading(false);
             }
         }
-        };
+    }, [userData, filter, searchQuery]);
 
+    // 初回ロード時のデータ取得
+    useEffect(() => {
         fetchEvents();
-    }, [userData]);
+    }, [fetchEvents]);
+
+    // 画面がフォーカスされるたびにデータを再取得
+    useFocusEffect(
+        useCallback(() => {
+            console.log('画面がフォーカスされました - データを再取得します');
+            fetchEvents();
+            return () => {
+                // クリーンアップが必要な場合はここに記述
+            };
+        }, [fetchEvents])
+    );
 
     // イベントのフィルタリング
     const filterEvents = (allEvents: Event[], filterType: string, query: string) => {
@@ -70,25 +96,26 @@ const EventsScreen = () => {
         
         // フィルタータイプによるフィルタリング
         if (filterType === 'upcoming') {
-        filtered = allEvents.filter(event => 
-            event.startDate.toDate() >= now
-        );
+            filtered = allEvents.filter(event => 
+                event.startDate.toDate() >= now
+            );
         } else if (filterType === 'past') {
-        filtered = allEvents.filter(event => 
-            event.startDate.toDate() < now
-        );
+            filtered = allEvents.filter(event => 
+                event.startDate.toDate() < now
+            );
         }
         
         // 検索クエリによるフィルタリング
         if (query) {
-        const lowercaseQuery = query.toLowerCase();
-        filtered = filtered.filter(event => 
-            event.title.toLowerCase().includes(lowercaseQuery) ||
-            (event.description && event.description.toLowerCase().includes(lowercaseQuery)) ||
-            event.location.toLowerCase().includes(lowercaseQuery)
-        );
+            const lowercaseQuery = query.toLowerCase();
+            filtered = filtered.filter(event => 
+                event.title.toLowerCase().includes(lowercaseQuery) ||
+                (event.description && event.description.toLowerCase().includes(lowercaseQuery)) ||
+                event.location.toLowerCase().includes(lowercaseQuery)
+            );
         }
         
+        console.log(`フィルター適用後のイベント数: ${filtered.length} (フィルター: ${filterType}, 検索: ${query || 'なし'})`);
         setFilteredEvents(filtered);
     };
 
@@ -116,14 +143,14 @@ const EventsScreen = () => {
         const endDate = event.endDate.toDate();
         
         const isSameDay = 
-        startDate.getDate() === endDate.getDate() &&
-        startDate.getMonth() === endDate.getMonth() &&
-        startDate.getFullYear() === endDate.getFullYear();
+            startDate.getDate() === endDate.getDate() &&
+            startDate.getMonth() === endDate.getMonth() &&
+            startDate.getFullYear() === endDate.getFullYear();
         
         if (isSameDay) {
-        return `${format(startDate, 'yyyy年M月d日(E)', { locale: ja })} ${format(startDate, 'HH:mm')}〜${format(endDate, 'HH:mm')}`;
+            return `${format(startDate, 'yyyy年M月d日(E)', { locale: ja })} ${format(startDate, 'HH:mm')}〜${format(endDate, 'HH:mm')}`;
         } else {
-        return `${format(startDate, 'yyyy年M月d日(E) HH:mm', { locale: ja })}〜${format(endDate, 'M月d日(E) HH:mm', { locale: ja })}`;
+            return `${format(startDate, 'yyyy年M月d日(E) HH:mm', { locale: ja })}〜${format(endDate, 'M月d日(E) HH:mm', { locale: ja })}`;
         }
     };
 
@@ -131,102 +158,102 @@ const EventsScreen = () => {
         const isPast = item.startDate.toDate() < new Date();
         
         return (
-        <Card 
-            style={[styles.eventCard, isPast && styles.pastEventCard]} 
-            onPress={() => handleOpenEvent(item.id)}
-        >
-            <View style={styles.eventCardContent}>
-            <View style={styles.eventMainInfo}>
-                <Text style={styles.eventTitle}>{item.title}</Text>
-                <Text style={styles.eventDate}>{formatEventDate(item)}</Text>
-                <Text style={styles.eventLocation}>
-                <MaterialCommunityIcons name="map-marker" size={14} color="#666" />
-                {' '}{item.location}
-                </Text>
-            </View>
-            
-            {item.cost && (
-                <View style={styles.eventCost}>
-                <Text style={styles.costAmount}>¥{item.cost.toLocaleString()}</Text>
+            <Card 
+                style={[styles.eventCard, isPast && styles.pastEventCard]} 
+                onPress={() => handleOpenEvent(item.id)}
+            >
+                <View style={styles.eventCardContent}>
+                    <View style={styles.eventMainInfo}>
+                        <Text style={styles.eventTitle}>{item.title}</Text>
+                        <Text style={styles.eventDate}>{formatEventDate(item)}</Text>
+                        <Text style={styles.eventLocation}>
+                            <MaterialCommunityIcons name="map-marker" size={14} color="#666" />
+                            {' '}{item.location}
+                        </Text>
+                    </View>
+                    
+                    {item.cost && (
+                        <View style={styles.eventCost}>
+                            <Text style={styles.costAmount}>¥{item.cost.toLocaleString()}</Text>
+                        </View>
+                    )}
                 </View>
-            )}
-            </View>
-        </Card>
+            </Card>
         );
     };
 
     if (loading) {
         return (
-        <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={theme.colors.primary} />
-        </View>
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={theme.colors.primary} />
+            </View>
         );
     }
 
     return (
         <View style={styles.container}>
-        <View style={styles.searchContainer}>
-            <Searchbar
-            placeholder="イベントを検索"
-            onChangeText={handleSearch}
-            value={searchQuery}
-            style={styles.searchBar}
-            />
-        </View>
-        
-        <View style={styles.filterContainer}>
-            <Chip
-            selected={filter === 'all'}
-            onPress={() => handleFilter('all')}
-            style={styles.filterChip}
-            selectedColor={theme.colors.primary}
-            >
-            すべて
-            </Chip>
-            <Chip
-            selected={filter === 'upcoming'}
-            onPress={() => handleFilter('upcoming')}
-            style={styles.filterChip}
-            selectedColor={theme.colors.primary}
-            >
-            今後
-            </Chip>
-            <Chip
-            selected={filter === 'past'}
-            onPress={() => handleFilter('past')}
-            style={styles.filterChip}
-            selectedColor={theme.colors.primary}
-            >
-            過去
-            </Chip>
-        </View>
-        
-        <FlatList
-            data={filteredEvents}
-            renderItem={renderEventItem}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.listContainer}
-            ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>
-                {searchQuery 
-                    ? '検索条件に一致するイベントがありません' 
-                    : filter === 'upcoming' 
-                    ? '今後のイベントはありません' 
-                    : filter === 'past' 
-                        ? '過去のイベントはありません' 
-                        : 'イベントがありません'}
-                </Text>
+            <View style={styles.searchContainer}>
+                <Searchbar
+                    placeholder="イベントを検索"
+                    onChangeText={handleSearch}
+                    value={searchQuery}
+                    style={styles.searchBar}
+                />
             </View>
-            }
-        />
-        
-        <FAB
-            style={styles.fab}
-            icon="plus"
-            onPress={handleCreateEvent}
-            color="white"
-        />
+            
+            <View style={styles.filterContainer}>
+                <Chip
+                    selected={filter === 'all'}
+                    onPress={() => handleFilter('all')}
+                    style={styles.filterChip}
+                    selectedColor={theme.colors.primary}
+                >
+                    すべて
+                </Chip>
+                <Chip
+                    selected={filter === 'upcoming'}
+                    onPress={() => handleFilter('upcoming')}
+                    style={styles.filterChip}
+                    selectedColor={theme.colors.primary}
+                >
+                    今後
+                </Chip>
+                <Chip
+                    selected={filter === 'past'}
+                    onPress={() => handleFilter('past')}
+                    style={styles.filterChip}
+                    selectedColor={theme.colors.primary}
+                >
+                    過去
+                </Chip>
+            </View>
+            
+            <FlatList
+                data={filteredEvents}
+                renderItem={renderEventItem}
+                keyExtractor={(item) => item.id}
+                contentContainerStyle={styles.listContainer}
+                ListEmptyComponent={
+                    <View style={styles.emptyContainer}>
+                        <Text style={styles.emptyText}>
+                            {searchQuery 
+                                ? '検索条件に一致するイベントがありません' 
+                                : filter === 'upcoming' 
+                                    ? '今後のイベントはありません' 
+                                    : filter === 'past' 
+                                        ? '過去のイベントはありません' 
+                                        : 'イベントがありません'}
+                        </Text>
+                    </View>
+                }
+            />
+            
+            <FAB
+                style={styles.fab}
+                icon="plus"
+                onPress={handleCreateEvent}
+                color="white"
+            />
         </View>
     );
 };
@@ -243,7 +270,7 @@ const styles = StyleSheet.create({
     },
     searchContainer: {
         padding: 16,
-        paddingBottom: 10,
+        paddingBottom: 14,
     },
     searchBar: {
         elevation: 2,
